@@ -66,7 +66,7 @@ export default {
     return {
       search: '',
       isOpen: false,
-      prefferedOpenDirection: 'below',
+      preferredOpenDirection: 'below',
       optimizedHeight: this.maxHeight
     }
   },
@@ -319,9 +319,6 @@ export default {
   },
   mounted () {
     /* istanbul ignore else */
-    if (!this.multiple && !this.clearOnSelect) {
-      console.warn('[Vue-Multiselect warn]: ClearOnSelect and Multiple props can’t be both set to false.')
-    }
     if (!this.multiple && this.max) {
       console.warn('[Vue-Multiselect warn]: Max prop should not be used when prop Multiple equals false.')
     }
@@ -465,6 +462,14 @@ export default {
       return this.valueKeys.indexOf(opt) > -1
     },
     /**
+     * Finds out if the given option is disabled
+     * @param  {Object||String||Integer} option passed element to check
+     * @returns {Boolean} returns true if element is disabled
+     */
+    isOptionDisabled (option) {
+      return !!option.$isDisabled
+    },
+    /**
      * Returns empty string when options is null/undefined
      * Returns tag query if option is tag.
      * Returns the customLabel() results and casts it to string.
@@ -555,7 +560,7 @@ export default {
 
         this.$emit('input', newValue, this.id)
       } else {
-        const optionsToAdd = group[this.groupValues].filter(not(this.isSelected))
+        const optionsToAdd = group[this.groupValues].filter(not(this.isOptionDisabled || this.isSelected))
 
         this.$emit('select', optionsToAdd, this.id)
         this.$emit(
@@ -571,7 +576,16 @@ export default {
      * @param {Object} group to validated selected values against
      */
     wholeGroupSelected (group) {
-      return group[this.groupValues].every(this.isSelected)
+      return group[this.groupValues].every(option => this.isSelected(option) || this.isOptionDisabled(option)
+      )
+    },
+    /**
+     * Helper to identify if all values in a group are disabled
+     *
+     * @param {Object} group to check for disabled values
+     */
+    wholeGroupDisabled (group) {
+      return group[this.groupValues].every(this.isOptionDisabled)
     },
     /**
      * Removes the given option from the selected options.
@@ -685,10 +699,10 @@ export default {
       const hasEnoughSpaceBelow = spaceBelow > this.maxHeight
 
       if (hasEnoughSpaceBelow || spaceBelow > spaceAbove || this.openDirection === 'below' || this.openDirection === 'bottom') {
-        this.prefferedOpenDirection = 'below'
+        this.preferredOpenDirection = 'below'
         this.optimizedHeight = Math.min(spaceBelow - 40, this.maxHeight)
       } else {
-        this.prefferedOpenDirection = 'above'
+        this.preferredOpenDirection = 'above'
         this.optimizedHeight = Math.min(spaceAbove - 40, this.maxHeight)
       }
     }
